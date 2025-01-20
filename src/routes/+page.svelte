@@ -1,67 +1,97 @@
 <script lang="ts">
-	let formState = $state({
+	import Header from "./Header.svelte";
+
+	interface iPerson {
+		age: number;
+		birthday: string;
+		name: string;
+	}
+
+	interface iFormStepSnippet {
+		id: string;
+		question: string;
+		type?: string;
+	}
+
+	interface iFormQuestion {
+		question: string;
+		id: string;
+		type?: string;
+	}
+
+	interface iFormState {
+		answers: iPerson;
+		errors: Record<string, string>;
+		isAdmin: boolean;
+		step: number;
+	}
+
+	const initialFormState: iPerson = {
 		age: 0,
-		error: "",
+		birthday: "",
+		name: ""
+	};
+
+	let formState: iFormState = $state({
+		answers: initialFormState,
+		errors: {},
 		isAdmin: false,
-		name: "",
 		step: 0
 	});
 
-	function progressFromStep1(): void {
-		// basic validation step 1
+	const formQuestions: iFormQuestion[] = [
+		{
+			id: "name",
+			question: "what is your name"
+		},
+		{
+			id: "age",
+			question: "what is your age"
+		},
+		{
+			id: "birthday",
+			question: "when is your birthday",
+			type: "date"
+		}
+	];
 
-		if (formState.name !== "") {
+	function progressForm(id: keyof iPerson) {
+		if (formState.answers[id]) {
 			formState.step += 1;
-			formState.error = "";
+			formState.errors[id] = "";
 		} else {
-			formState.error = "name is empty or invalid";
+			formState.errors[id] = `please the value for '${id}' is invalid. try again...`;
 		}
 	}
 </script>
 
-<main class="h-screen text-white">
-	<pre>
-        {JSON.stringify(formState, null, 4)}
-    </pre>
+<main class="min-h-screen text-white">
+	<Header name={formState.answers.name || "user"} />
 
 	<p>step: {formState.step}</p>
 
-	{#if formState.step === 0}
-		<div class="space-x-2">
-			<label for="name">name</label>
-			<input
-				type="text"
-				name="name"
-				id="name"
-				bind:value={formState.name}
-				placeholder="name goes here"
-			/>
-		</div>
+	<!-- loop -->
+	{#each formQuestions as { id, question, type }, index (id)}
+		{#if formState.step === index}
+			{@render formStep({ id, question, type })}
+		{/if}
+	{/each}
 
-		<button onclick={progressFromStep1}>next</button>
-	{:else if formState.step === 1}
-		<div class="space-x-2">
-			<label for="age">age</label>
-			<input
-				type="text"
-				name="age"
-				id="age"
-				bind:value={formState.age}
-				placeholder="age goes here"
-			/>
-		</div>
+	<!-- component -->
+	{#snippet formStep({ id, question, type = "text" }: iFormStepSnippet)}
+		<article>
+			<div>
+				<label for={id}>{question}</label>
+				<input {type} name={id} {id} bind:value={formState.answers[id as keyof iPerson]} />
+			</div>
 
-		<button
-			onclick={() => {
-				if (formState.age >= 18) {
-					formState.step + 1;
-					formState.error = "";
-				} else {
-					formState.error = "werey never enter 18";
-				}
-			}}>submit</button
-		>
-	{/if}
+			<button onclick={() => progressForm(id as keyof iPerson)}>next</button>
+		</article>
+	{/snippet}
+
+	<pre>
+        {JSON.stringify(formState, null, 4)}
+    </pre>
 </main>
 
 <style lang="scss">
@@ -69,9 +99,8 @@
 		background-color: black;
 
 		display: flex;
-		align-items: center;
-		justify-content: center;
 		flex-flow: column;
+		gap: 1rem;
 	}
 
 	input {
