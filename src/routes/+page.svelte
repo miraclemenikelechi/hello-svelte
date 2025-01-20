@@ -8,7 +8,7 @@
 	}
 
 	interface iFormStepSnippet {
-		id: string;
+		id: keyof iPerson;
 		question: string;
 		type?: string;
 	}
@@ -55,7 +55,7 @@
 		}
 	];
 
-	function progressForm(id: keyof iPerson) {
+	function progressForm(id: keyof iPerson): void {
 		if (formState.answers[id]) {
 			formState.step += 1;
 			formState.errors[id] = "";
@@ -73,7 +73,7 @@
 	<!-- loop -->
 	{#each formQuestions as { id, question, type }, index (id)}
 		{#if formState.step === index}
-			{@render formStep({ id, question, type })}
+			{@render formStep({ id: id as keyof iPerson, question, type })}
 		{/if}
 	{/each}
 
@@ -82,10 +82,10 @@
 		<article>
 			<div>
 				<label for={id}>{question}</label>
-				<input {type} name={id} {id} bind:value={formState.answers[id as keyof iPerson]} />
+				<input {type} name={id} {id} bind:value={formState.answers[id]} />
 			</div>
 
-			<button onclick={() => progressForm(id as keyof iPerson)}>next</button>
+			<button onclick={() => progressForm(id)}>next</button>
 		</article>
 	{/snippet}
 
